@@ -358,9 +358,36 @@ def _tensor_matrix_multiply(
     """
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
+    
+    assert a_shape[-1] == b_shape[-2], "Cannot matmul these tensors, dims don't match"
+    
+    #for outer_index in out.indices():
+    #    for inner_val in range(J):
+    #        out[outer_index] += A[outer_index[0], inner_val] * \
+    #                            B[inner_val, outer_index[1]]
+    
+    for i in prange(len(out)):
+            
+        out_0 = i // (out_shape[-1] * out_shape[-2])
+        out_1 = (i % (out_shape[-1] * out_shape[-2])) // out_shape[-1]
+        out_2 = i % out_shape[-1]
+
+        a_ = out_0 * a_batch_stride + out_1 * a_strides[-2]
+        b_ = out_0 * b_batch_stride + out_2 * a_strides[-1]
+            
+        t = 0
+        for p in range(a_shape[-1]):
+            t += (
+            a_storage[a_ + p * a_strides[-1]] *
+            b_storage[b_ + p * b_strides[-2]]
+                )
+        out[i] = t
+        
+        
+    
 
     # TODO: Implement for Task 3.2.
-    raise NotImplementedError("Need to implement for Task 3.2")
+    #raise NotImplementedError("Need to implement for Task 3.2")
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
