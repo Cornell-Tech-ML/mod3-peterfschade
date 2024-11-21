@@ -399,10 +399,11 @@ def tensor_reduce(
         # TODO: Implement for Task 2.3.
 
         out_idx: Index = np.zeros(MAX_DIMS, np.int32)
+        reduce_size = a_shape[reduce_dim]
         for i in range(len(out)):
             to_index(i, out_shape, out_idx)
             o_pos = index_to_position(out_idx, out_strides)
-            for j in range(a_shape[reduce_dim]):
+            for j in range(reduce_size):
                 out_idx[reduce_dim] = j
                 k = index_to_position(out_idx, a_strides)
                 out[o_pos] = fn(out[o_pos], a_storage[k])
