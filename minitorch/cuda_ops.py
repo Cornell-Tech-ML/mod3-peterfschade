@@ -1,6 +1,7 @@
 # type: ignore
 # Currently pyright doesn't support numba.cuda
 
+from threading import local
 from typing import Callable, Optional, TypeVar, Any
 
 import numba
@@ -173,14 +174,15 @@ def tensor_map(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+        localInd = cuda.local.array(2, numba.int32)
         # TODO: Implement for Task 3.3.
     
         if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
-            o = index_to_position(out_index, out_strides)
-            j = index_to_position(in_index, in_strides)
-            out[o] = fn(in_storage[j])
+            localInd[0] = index_to_position(out_index, out_strides)
+            localInd[1] = index_to_position(in_index, in_strides)
+            out[localInd[0]] = fn(in_storage[localInd[1]])
         #raise NotImplementedError("Need to implement for Task 3.3")
 
     return cuda.jit()(_map)  # type: ignore
@@ -222,15 +224,17 @@ def tensor_zip(
         a_index = cuda.local.array(MAX_DIMS, numba.int32)
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+        localInd = cuda.local.array(3, numba.int32)
         
         if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, a_shape, a_index)
             broadcast_index(out_index, out_shape, b_shape, b_index)
-            o = index_to_position(out_index, out_strides)
-            a = index_to_position(a_index, a_strides)
-            b = index_to_position(b_index, b_strides)
-            out[o] = fn(a_storage[a], b_storage[b])
+            localInd[0] = index_to_position(out_index, out_strides)
+            localInd[1] = index_to_position(a_index, a_strides)
+            localInd[2] = index_to_position(b_index, b_strides)
+            
+            out[localInd[0]] = fn(a_storage[localInd[1]], b_storage[localInd[2]])
 
         # TODO: Implement for Task 3.3.
         #raise NotImplementedError("Need to implement for Task 3.3")
@@ -264,9 +268,19 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     cache = cuda.shared.array(BLOCK_DIM, numba.float64)
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     pos = cuda.threadIdx.x
+    
+    if i < size:
+        cache[pos] = a[i]
+        cuda.syncthreads()
+        if pos == 0:
+            for stride in range(1, cuda.blockDim.x):
+                cache[0] += cache[stride]
+            out[cuda.blockIdx.x] = cache[0]
+    
+    
 
     # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    #raise NotImplementedError("Need to implement for Task 3.3")
 
 
 jit_sum_practice = cuda.jit()(_sum_practice)
