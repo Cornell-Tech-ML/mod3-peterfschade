@@ -371,9 +371,10 @@ def _tensor_matrix_multiply(
         out_0 = i // (out_shape[-1] * out_shape[-2])
         out_1 = (i % (out_shape[-1] * out_shape[-2])) // out_shape[-1]
         out_2 = i % out_shape[-1]
+        
 
         a_ = out_0 * a_batch_stride + out_1 * a_strides[-2]
-        b_ = out_0 * b_batch_stride + out_2 * a_strides[-1]
+        b_ = out_0 * b_batch_stride + out_2 * b_strides[-1]
             
         t = 0
         for p in range(a_shape[-1]):

@@ -251,14 +251,14 @@ class SimpleOps(TensorOps):
     @staticmethod
     def matrix_multiply(a: "Tensor", b: "Tensor") -> "Tensor":
         """Matrix multiplication"""
-        raise NotImplementedError("Not implemented in this assignment")
+        #raise NotImplementedError("Not implemented in this assignment")
         a_strides = a._tensor._strides
         a_storage = a._tensor._storage
         a_shape = a._tensor._shape
         b_strides = b._tensor._strides
         b_storage = b._tensor._storage
         b_shape = b._tensor._shape
-        out = a.zeros(shape=(a.shape[0], b.shape[1]))
+        out = a.zeros(shape=(a.shape[0], b.shape[1], a.shape[-2]))
         out_strides = out._tensor._strides
         out_storage = out._tensor._storage
         out_shape = out._tensor._shape
@@ -274,7 +274,7 @@ class SimpleOps(TensorOps):
 
 
             a_start = out_0 * a_batch_stride + out_1 * a_strides[-2]
-            b_start = out_0 * b_batch_stride + out_2 * a_strides[-1]
+            b_start = out_0 * b_batch_stride + out_2 * b_strides[-1]
             
             t = 0
             for p in range(a_shape[-1]):
