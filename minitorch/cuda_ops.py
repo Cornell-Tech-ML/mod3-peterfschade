@@ -400,21 +400,17 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
-    localInd = cuda.local.array(3, numba.int32)
-    temp = cuda.local.array(1, numba.float64)
-    temp[0] = 0.0
+    
     if i < size and j < size:
-        for k in range(0, size, BLOCK_DIM):
-            localInd[0] = i
-            localInd[1] = k + cuda.threadIdx.x
-            localInd[2] = j
-            a_shared[cuda.threadIdx.y, cuda.threadIdx.x] = a[localInd[0] * size + localInd[1]]
-            b_shared[cuda.threadIdx.y, cuda.threadIdx.x] = b[localInd[1] * size + localInd[2]]
+        temp = 0.0
+        for k in range(size):
+            a_shared[cuda.threadIdx.x, cuda.threadIdx.y] = a[i * size + k]
+            b_shared[cuda.threadIdx.x, cuda.threadIdx.y] = b[k * size + j]
             cuda.syncthreads()
-            for kk in range(0, BLOCK_DIM):
-                temp[0] += a_shared[cuda.threadIdx.y, kk] * b_shared[kk, cuda.threadIdx.x]
+            for kk in range(BLOCK_DIM):
+                temp += a_shared[cuda.threadIdx.x, kk] * b_shared[kk, cuda.threadIdx.y]
             cuda.syncthreads()
-        out[i * size + j] = temp[0]
+        out[i * size + j] = temp
         
     # TODO: Implement for Task 3.3.
     #raise NotImplementedError("Need to implement for Task 3.3")
@@ -488,6 +484,7 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.4.
     
     t = 0
+    
     
     raise NotImplementedError("Need to implement for Task 3.4")
 
