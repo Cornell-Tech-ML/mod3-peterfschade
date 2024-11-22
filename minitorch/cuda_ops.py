@@ -459,6 +459,10 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
+    assert a_shape[-1] == b_shape[-2], "can't multiply shapes {} and {}".format(
+        a_shape, b_shape
+    )
+    
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
     # Batch dimension - fixed
@@ -483,10 +487,35 @@ def _tensor_matrix_multiply(
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
     
-    t = 0
+    
+    if i < out_shape[-1] and j < out_shape[-2]:
+        t = 0.0
+        for k in range((a_shape[-1] + BLOCK_DIM - 1) // BLOCK_DIM):
+            # Load in the shared memory
+            if i < out_shape[1] and k * BLOCK_DIM + pi < a_shape[-1]:
+                a_shared[pi, pj] = a_storage[
+                    batch * a_batch_stride + i * a_strides[-2] + k * BLOCK_DIM + pi
+                ]
+            else:
+                a_shared[pi, pj] = 0.0
+
+            if j < out_shape[0] and k * BLOCK_DIM + pj < b_shape[-2]:
+                b_shared[pi, pj] = b_storage[
+                    batch * b_batch_stride + (k * BLOCK_DIM + pj) * b_strides[-1] + j
+                ]
+            else:
+                b_shared[pi, pj] = 0.0
+
+            cuda.syncthreads()
+
+            for kk in range(BLOCK_DIM):
+                t += a_shared[pi, kk] * b_shared[kk, pj]
+
+        cuda.syncthreads()
+        out[batch * out_strides[-1] + i * out_strides[-2] + j] = t
     
     
-    raise NotImplementedError("Need to implement for Task 3.4")
+    #raise NotImplementedError("Need to implement for Task 3.4")
 
 
 tensor_matrix_multiply = jit(_tensor_matrix_multiply)
