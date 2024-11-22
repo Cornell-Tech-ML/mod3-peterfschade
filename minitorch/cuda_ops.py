@@ -334,8 +334,8 @@ def tensor_reduce(
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
         
-        if pos < BLOCK_DIM:
-            cache[pos] = reduce_value
+        cache[pos] = reduce_value
+        
         if out_pos < out_size:
             to_index(out_pos, out_shape, out_index)
             out_loc = index_to_position(out_index, out_strides)
@@ -345,11 +345,11 @@ def tensor_reduce(
                 cache[pos] = a_storage[a_loc]
                 cuda.syncthreads()
                 n = 1
-                for n in range(1, BLOCK_DIM, 2):
-                
+                while n < BLOCK_DIM:
                     if pos % (2 * n) == 0:
                         cache[pos] = fn(cache[pos], cache[pos + n])
                         cuda.syncthreads()
+                    n *= 2
             if pos == 0:
                 out[out_loc] = cache[0]
 
@@ -358,7 +358,7 @@ def tensor_reduce(
         
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+        #raise NotImplementedError("Need to implement for Task 3.3")
 
     return jit(_reduce)  # type: ignore
 
@@ -465,6 +465,9 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
+    
+    t = 0
+    
     raise NotImplementedError("Need to implement for Task 3.4")
 
 
