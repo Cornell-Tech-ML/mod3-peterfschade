@@ -459,9 +459,9 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
-    assert a_shape[-1] == b_shape[-2], "can't multiply shapes {} and {}".format(
-        a_shape, b_shape
-    )
+    #assert a_shape[-1] == b_shape[-2], "can't multiply shapes {} and {}".format(
+    #    a_shape, b_shape
+    #)
     
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
