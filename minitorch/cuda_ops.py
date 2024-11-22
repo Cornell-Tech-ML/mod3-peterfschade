@@ -488,7 +488,7 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.4.
     
     
-    if i < out_shape[-2] and j < out_shape[-1]:
+    if i < a_shape[-2] and j < b_shape[-1]:
         t = 0.0
         # Load in the shared memory
         a_shared[pi, pj] = a_storage[
