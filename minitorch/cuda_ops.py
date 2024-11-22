@@ -1,9 +1,11 @@
 # type: ignore
 # Currently pyright doesn't support numba.cuda
 
+from functools import reduce
 from threading import local
 from typing import Callable, Optional, TypeVar, Any
 
+from llvmlite.ir import Block
 import numba
 from numba import cuda
 from numba.cuda import jit as _jit
@@ -270,12 +272,14 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     pos = cuda.threadIdx.x
     
     if i < size:
+        pos = cuda.threadIdx.x
+        temp = cuda.local.array(1, numba.float64)
         cache[pos] = a[i]
         cuda.syncthreads()
         if pos == 0:
-            for stride in range(1, cuda.blockDim.x):
-                cache[0] += cache[stride]
-            out[cuda.blockIdx.x] = cache[0]
+            for stride in range(0, cuda.blockDim.x):
+                temp += cache[stride]
+            out[cuda.blockIdx.x] = temp
     
     
 
@@ -329,6 +333,28 @@ def tensor_reduce(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
+        
+        cache[pos] = reduce_value
+        if out_pos < out_size:
+            to_index(out_pos, out_shape, out_index)
+            out_ordinal = index_to_position(out_index, out_strides)
+            out_index[reduce_dim] = out_index[reduce_dim] * BLOCK_DIM + cuda.threadIdx.x
+            a_ordinal = index_to_position(out_index, a_strides)
+            if out_index[reduce_dim] < a_shape[reduce_dim]:
+                cache[pos] = a_storage[a_ordinal]
+                cuda.syncthreads()
+                n = 1
+                while n < BLOCK_DIM:
+                    if pos % (2 * n) == 0:
+                        cache[pos] = fn(cache[pos], cache[pos + n])
+                        cuda.syncthreads()
+                    n *= 2
+            if pos == 0:
+                out[out_ordinal] = cache[0]
+
+            
+        
+        
 
         # TODO: Implement for Task 3.3.
         raise NotImplementedError("Need to implement for Task 3.3")
