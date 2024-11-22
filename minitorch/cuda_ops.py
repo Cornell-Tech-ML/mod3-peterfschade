@@ -488,31 +488,24 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.4.
     
     
-    if i < out_shape[-1] and j < out_shape[-2]:
+    if i < out_shape[-2] and j < out_shape[-1]:
         t = 0.0
-        for k in range((a_shape[-1] + BLOCK_DIM - 1) // BLOCK_DIM):
-            # Load in the shared memory
-            if i < out_shape[1] and k * BLOCK_DIM + pi < a_shape[-1]:
-                a_shared[pi, pj] = a_storage[
-                    batch * a_batch_stride + i * a_strides[-2] + k * BLOCK_DIM + pi
-                ]
-            else:
-                a_shared[pi, pj] = 0.0
+        # Load in the shared memory
+        a_shared[pi, pj] = a_storage[
+            batch * a_batch_stride + i * a_strides[-2]
+            ]
 
-            if j < out_shape[0] and k * BLOCK_DIM + pj < b_shape[-2]:
-                b_shared[pi, pj] = b_storage[
-                    batch * b_batch_stride + (k * BLOCK_DIM + pj) * b_strides[-1] + j
-                ]
-            else:
-                b_shared[pi, pj] = 0.0
-
-            cuda.syncthreads()
-
-            for kk in range(BLOCK_DIM):
-                t += a_shared[pi, kk] * b_shared[kk, pj]
+        b_shared[pi, pj] = b_storage[
+            batch * b_batch_stride + j * b_strides[-1]
+            ]
 
         cuda.syncthreads()
-        out[batch * out_strides[-1] + i * out_strides[-2] + j] = t
+
+        for kk in range(BLOCK_DIM):
+            t += a_shared[pi, kk] * b_shared[kk, pj]
+
+        cuda.syncthreads()
+        out[batch * out_strides[-2] + i * out_strides[-1] + j] = t
     
     
     #raise NotImplementedError("Need to implement for Task 3.4")
