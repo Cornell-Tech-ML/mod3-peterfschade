@@ -336,7 +336,6 @@ def tensor_reduce(
         
         if pos < BLOCK_DIM:
             cache[pos] = reduce_value
-            cuda.syncthreads()
         if out_pos < out_size:
             to_index(out_pos, out_shape, out_index)
             out_loc = index_to_position(out_index, out_strides)
@@ -345,13 +344,12 @@ def tensor_reduce(
             if out_index[reduce_dim] < a_shape[reduce_dim]:
                 cache[pos] = a_storage[a_loc]
                 cuda.syncthreads()
-
-                for n in range(0, BLOCK_DIM):
+                n = 1
+                for n in range(1, BLOCK_DIM, 2):
+                
                     if pos % (2 * n) == 0:
                         cache[pos] = fn(cache[pos], cache[pos + n])
                         cuda.syncthreads()
-
-
             if pos == 0:
                 out[out_loc] = cache[0]
 
