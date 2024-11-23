@@ -488,22 +488,26 @@ def _tensor_matrix_multiply(
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
     
-    
-    if i < a_shape[-2] and j < b_shape[-1]:
-        t = 0.0
-        # Load in the shared memory
-        a_shared[pi, pj] = a_storage[
-            batch * a_batch_stride + i * a_strides[-2] + j * a_strides[-1]
-            ]
-
-        b_shared[pi, pj] = b_storage[
-            batch * b_batch_stride + j * b_strides[-1] + i * b_strides[-2]
-            ]
+    sharedD = a_shape[2]
+    t = 0.0
+    for blocks in range(0, sharedD, BLOCK_DIM):
+        k = blocks + pj
+        w = blocks + pi
+        if i < a_shape[1] and k < a_shape[2]:
+            # Load in the shared memory
+            a_shared[pi, pj] = a_storage[
+                batch * a_batch_stride + i * a_strides[-2] + j * a_strides[-1]
+                ]
+        if w < b_shape[1] and j < b_shape[2]:
+            b_shared[pi, pj] = b_storage[
+                batch * b_batch_stride + j * b_strides[-1] + i * b_strides[-2]
+                ]
 
         cuda.syncthreads()
 
         for kk in range(BLOCK_DIM):
-            t += a_shared[pi, kk] * b_shared[kk, pj]
+            if (kk + blocks) < a_shape[2]:
+                t += a_shared[pi, kk] * b_shared[kk, pj]
 
         cuda.syncthreads()
         # write out the result to out, using the strides
