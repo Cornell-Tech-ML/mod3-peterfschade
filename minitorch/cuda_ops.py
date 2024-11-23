@@ -493,11 +493,11 @@ def _tensor_matrix_multiply(
         t = 0.0
         # Load in the shared memory
         a_shared[pi, pj] = a_storage[
-            batch * a_batch_stride + i * a_strides[-2]
+            batch * a_batch_stride + i * a_strides[-2] + j * a_strides[-1]
             ]
 
         b_shared[pi, pj] = b_storage[
-            batch * b_batch_stride + j * b_strides[-1]
+            batch * b_batch_stride + j * b_strides[-1] + i * b_strides[-2]
             ]
 
         cuda.syncthreads()
