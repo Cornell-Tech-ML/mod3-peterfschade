@@ -505,7 +505,8 @@ def _tensor_matrix_multiply(
             t += a_shared[pi, kk] * b_shared[kk, pj]
 
         cuda.syncthreads()
-        out[batch * out_strides[-2] + i * out_strides[-1] + j] = t
+        # write out the result to out, using the strides
+        out[index_to_position((batch,i, j), out_strides)] = t
     
     
     #raise NotImplementedError("Need to implement for Task 3.4")
