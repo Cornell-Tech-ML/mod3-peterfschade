@@ -11,7 +11,7 @@ from .tensor_data import (
     index_to_position,
     shape_broadcast,
     to_index,
-    MAX_DIMS
+    MAX_DIMS,
 )
 
 if TYPE_CHECKING:
@@ -251,7 +251,7 @@ class SimpleOps(TensorOps):
     @staticmethod
     def matrix_multiply(a: "Tensor", b: "Tensor") -> "Tensor":
         """Matrix multiplication"""
-        #raise NotImplementedError("Not implemented in this assignment")
+        # raise NotImplementedError("Not implemented in this assignment")
         a_strides = a._tensor._strides
         a_storage = a._tensor._storage
         a_shape = a._tensor._shape
@@ -259,32 +259,31 @@ class SimpleOps(TensorOps):
         b_storage = b._tensor._storage
         b_shape = b._tensor._shape
         out = a.zeros(shape=(a.shape[0], b.shape[1], a.shape[-2]))
-        out_strides = out._tensor._strides
+
         out_storage = out._tensor._storage
         out_shape = out._tensor._shape
-        
+
         a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
         b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
-        
+
         for i in range(len(out_storage)):
-            
             out_0 = i // (out_shape[-1] * out_shape[-2])
             out_1 = (i % (out_shape[-1] * out_shape[-2])) // out_shape[-1]
             out_2 = i % out_shape[-1]
 
-
             a_start = out_0 * a_batch_stride + out_1 * a_strides[-2]
             b_start = out_0 * b_batch_stride + out_2 * b_strides[-1]
-            
+
             t = 0
             for p in range(a_shape[-1]):
                 t += (
-                a_storage[a_start + p * a_strides[-1]] *
-                b_storage[b_start + p * b_strides[-2]]
+                    a_storage[a_start + p * a_strides[-1]]
+                    * b_storage[b_start + p * b_strides[-2]]
                 )
             out._tensor._storage[i] = t
-            
+
         return out
+
     is_cuda = False
 
 

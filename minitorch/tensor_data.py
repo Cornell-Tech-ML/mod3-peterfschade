@@ -7,7 +7,7 @@ import numba
 import numba.cuda
 import numpy as np
 import numpy.typing as npt
-from numpy import array, float64, shape
+from numpy import array, float64
 from typing_extensions import TypeAlias
 
 from .operators import prod
@@ -127,16 +127,16 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
 
     """
     # TODO: Implement for Task 2.2.
-    a,b = shape1, shape2
+    a, b = shape1, shape2
     m = max(len(a), len(b))
     c_rev = [0] * m
     a_rev = list(reversed(a))
     b_rev = list(reversed(b))
-    
+
     for i in range(m):
         if i >= len(a):
             c_rev[i] = b_rev[i]
-        elif i>= len(b):
+        elif i >= len(b):
             c_rev[i] = a_rev[i]
         else:
             c_rev[i] = max(a_rev[i], b_rev[i])
@@ -145,6 +145,7 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
             if b_rev[i] != c_rev[i] and b_rev[i] != 1:
                 raise IndexingError(f"Shapes {a} and {b} are not broadcastable")
     return tuple(reversed(c_rev))
+
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
     """Return a contiguous stride for a shape"""

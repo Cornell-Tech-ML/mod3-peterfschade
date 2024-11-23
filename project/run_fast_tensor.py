@@ -72,7 +72,7 @@ class FastTrain:
         losses = []
         s = time.time()
         for epoch in range(max_epochs):
-            
+
             total_loss = 0.0
             c = list(zip(data.X, data.y))
             random.shuffle(c)
@@ -93,7 +93,7 @@ class FastTrain:
 
                 # Update
                 optim.step()
-            
+
             losses.append(total_loss)
             # Logging
             if epoch % 10 == 0 or epoch == max_epochs:
