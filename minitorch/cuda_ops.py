@@ -506,7 +506,10 @@ def _tensor_matrix_multiply(
 
         cuda.syncthreads()
         # write out the result to out, using the strides
-        out[index_to_position((batch,i, j), out_strides)] = t
+        position = 0
+        for idx, stride in zip((batch,i, j), out_strides):
+            position += idx * stride
+        out[position] = t
     
     
     #raise NotImplementedError("Need to implement for Task 3.4")
