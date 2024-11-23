@@ -496,11 +496,11 @@ def _tensor_matrix_multiply(
         if i < a_shape[1] and k < a_shape[2]:
             # Load in the shared memory
             a_shared[pi, pj] = a_storage[
-                batch * a_batch_stride + i * a_strides[-2] + j * a_strides[-1]
+                batch * a_batch_stride + i * a_strides[-2] + k * a_strides[-1]
                 ]
         if w < b_shape[1] and j < b_shape[2]:
             b_shared[pi, pj] = b_storage[
-                batch * b_batch_stride + j * b_strides[-1] + i * b_strides[-2]
+                batch * b_batch_stride + j * b_strides[-1] + w * b_strides[-2]
                 ]
 
         cuda.syncthreads()
@@ -509,12 +509,11 @@ def _tensor_matrix_multiply(
             if (kk + blocks) < a_shape[2]:
                 t += a_shared[pi, kk] * b_shared[kk, pj]
 
-        cuda.syncthreads()
         # write out the result to out, using the strides
-        
-        position = batch * out_batch_stride + i * out_strides[-2] + j * out_strides[-1]
-        if position < out_size:
-            out[position] = t
+        if i < out_shape[-2] and j < out_shape[-1]:
+            position = batch * out_batch_stride + i * out_strides[-2] + j * out_strides[-1]
+            if position < out_size:
+                out[position] = t
     
     
     #raise NotImplementedError("Need to implement for Task 3.4")
