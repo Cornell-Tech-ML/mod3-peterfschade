@@ -399,16 +399,22 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
 
-    if i < size and j < size: # check if the index is within the size
-        temp = 0.0 # temporary local variable to store the result of the dot product
-        for k in range(size):# loop over the shared dimension
-            a_shared[cuda.threadIdx.x, cuda.threadIdx.y] = a[i * size + k] # load a into shared memory
-            b_shared[cuda.threadIdx.x, cuda.threadIdx.y] = b[k * size + j] # load b into shared memory
-            cuda.syncthreads() # synchronize threads after loading the shared memory
-            for kk in range(BLOCK_DIM): # compute the dot product
-                temp += a_shared[cuda.threadIdx.x, kk] * b_shared[kk, cuda.threadIdx.y] # dot product
-            #cuda.syncthreads() # synchronize threads after computing the dot product
-        out[i * size + j] = temp # write out the result to out global memory
+    if i < size and j < size:  # check if the index is within the size
+        temp = 0.0  # temporary local variable to store the result of the dot product
+        for k in range(size):  # loop over the shared dimension
+            a_shared[cuda.threadIdx.x, cuda.threadIdx.y] = a[
+                i * size + k
+            ]  # load a into shared memory
+            b_shared[cuda.threadIdx.x, cuda.threadIdx.y] = b[
+                k * size + j
+            ]  # load b into shared memory
+            cuda.syncthreads()  # synchronize threads after loading the shared memory
+            for kk in range(BLOCK_DIM):  # compute the dot product
+                temp += (
+                    a_shared[cuda.threadIdx.x, kk] * b_shared[kk, cuda.threadIdx.y]
+                )  # dot product
+            # cuda.syncthreads() # synchronize threads after computing the dot product
+        out[i * size + j] = temp  # write out the result to out global memory
 
     # TODO: Implement for Task 3.3.
     # raise NotImplementedError("Need to implement for Task 3.3")
@@ -487,34 +493,40 @@ def _tensor_matrix_multiply(
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
 
-    sharedD = a_shape[2] # shared dimension
-    t = 0.0 # temporary variable to store the result of the dot product
-    for blocks in range(0, sharedD, BLOCK_DIM): # move across shared dimension by block dim
-        k = blocks + pj # column index
-        w = blocks + pi # row index
-        if i < a_shape[1] and k < a_shape[2]: # Load in the shared memory
+    sharedD = a_shape[2]  # shared dimension
+    t = 0.0  # temporary variable to store the result of the dot product
+    for blocks in range(
+        0, sharedD, BLOCK_DIM
+    ):  # move across shared dimension by block dim
+        k = blocks + pj  # column index
+        w = blocks + pi  # row index
+        if i < a_shape[1] and k < a_shape[2]:  # Load in the shared memory
             # Load in the shared memory
             a_shared[pi, pj] = a_storage[
                 batch * a_batch_stride + i * a_strides[-2] + k * a_strides[-1]
-            ] # a[batch, i, k]
-        if w < b_shape[1] and j < b_shape[2]: # Load in the shared memory
+            ]  # a[batch, i, k]
+        if w < b_shape[1] and j < b_shape[2]:  # Load in the shared memory
             b_shared[pi, pj] = b_storage[
                 batch * b_batch_stride + j * b_strides[-1] + w * b_strides[-2]
-            ] # b[batch, j, w]
+            ]  # b[batch, j, w]
 
-        cuda.syncthreads() # synchronize threads after loading the shared memory
+        cuda.syncthreads()  # synchronize threads after loading the shared memory
 
-        for kk in range(BLOCK_DIM): # Compute the dot product for position c[i, j]
-            if (kk + blocks) < a_shape[2]: # check if the index is within the shared dimension
-                t += a_shared[pi, kk] * b_shared[kk, pj] # dot product
+        for kk in range(BLOCK_DIM):  # Compute the dot product for position c[i, j]
+            if (kk + blocks) < a_shape[
+                2
+            ]:  # check if the index is within the shared dimension
+                t += a_shared[pi, kk] * b_shared[kk, pj]  # dot product
 
         # write out the result to out, using the strides
-        if i < out_shape[-2] and j < out_shape[-1]: # check if the index is within the output shape
+        if (
+            i < out_shape[-2] and j < out_shape[-1]
+        ):  # check if the index is within the output shape
             position = (
                 batch * out_batch_stride + i * out_strides[-2] + j * out_strides[-1]
-            ) # position in the output tensor
-            if position < out_size: # check if the position is within the output size
-                out[position] = t # write out the result to out global memory
+            )  # position in the output tensor
+            if position < out_size:  # check if the position is within the output size
+                out[position] = t  # write out the result to out global memory
 
     # raise NotImplementedError("Need to implement for Task 3.4")
 
