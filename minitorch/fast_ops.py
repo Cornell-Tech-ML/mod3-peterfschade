@@ -177,13 +177,13 @@ def tensor_map(
                 if out_shape[i] != in_shape[i] or out_strides[i] != in_strides[i]:
                     stride_aligned = 0
                     break
-        out_idx: Index = np.zeros(MAX_DIMS, np.int32)
-        in_idx: Index = np.zeros(MAX_DIMS, np.int32)
+        
         for i in prange(len(out)):
             if stride_aligned > 0:
                 out[i] = fn(in_storage[i])
             else:
-                
+                out_idx: Index = np.zeros(MAX_DIMS, np.int32)
+                in_idx: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
                 o = index_to_position(out_idx, out_strides)
@@ -242,15 +242,15 @@ def tensor_zip(
                 elif out_shape[i] != b_shape[i] or out_strides[i] != b_strides[i]:
                     stride_aligned = 0
                     break
-        out_idx: Index = np.zeros(MAX_DIMS, np.int32)
-        a_idx: Index = np.zeros(MAX_DIMS, np.int32)
-        b_idx: Index = np.zeros(MAX_DIMS, np.int32)
+        
         for i in prange(len(out)): # main loop
             if stride_aligned > 0:
                 
                 out[i] = fn(a_storage[i], b_storage[i])
             else:
-                
+                out_idx: Index = np.zeros(MAX_DIMS, np.int32)
+                a_idx: Index = np.zeros(MAX_DIMS, np.int32)
+                b_idx: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_idx)
                 o = index_to_position(out_idx, out_strides)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
@@ -297,9 +297,9 @@ def tensor_reduce(
         
         
         reduce_size = a_shape[reduce_dim]
-        out_idx: Index = np.zeros(MAX_DIMS, np.int32)
+        
         for i in prange(len(out)):
-            
+            out_idx: Index = np.zeros(MAX_DIMS, np.int32)
             to_index(i, out_shape, out_idx)
             o_pos = index_to_position(out_idx, out_strides)
             k0 = index_to_position(out_idx, a_strides)
