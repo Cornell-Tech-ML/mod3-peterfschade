@@ -509,7 +509,8 @@ def _tensor_matrix_multiply(
         # write out the result to out, using the strides
         
         position = batch * out_batch_stride + i * out_strides[-2] + j * out_strides[-1]
-        out[position] = t
+        if position < out_size:
+            out[position] = t
     
     
     #raise NotImplementedError("Need to implement for Task 3.4")
